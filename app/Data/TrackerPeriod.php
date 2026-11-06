@@ -3,16 +3,19 @@
 namespace App\Data;
 
 use App\Models\User;
+use App\Support\LocalCalendar;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 
 /**
  * The window of time a user's tracker covers.
  *
- * It starts on 1 January of the year the user registered (optionally a few years
- * earlier, see `habits.backfill_years`) and ends on 31 December of the current
- * year. Check-ins may be recorded from the start up to today; calendar and year
- * navigation is clamped to the whole window.
+ * It starts on the first day of the year the user registered (optionally a few
+ * years earlier, see `habits.backfill_years`) and ends on the last day of the
+ * current year, in the active locale's calendar (1 Farvardin – end of Esfand in
+ * Persian, 1 January – 31 December in English; see `LocalCalendar`). Check-ins
+ * may be recorded from the start up to today; calendar and year navigation is
+ * clamped to the whole window.
  */
 readonly class TrackerPeriod
 {
@@ -32,10 +35,11 @@ readonly class TrackerPeriod
             ? CarbonImmutable::instance($user->created_at)
             : Date::today()->toImmutable();
 
-        $start = $registeredAt->startOfYear()->subYears(max(0, (int) config('habits.backfill_years')));
-        $end = Date::today()->toImmutable()->endOfYear()->startOfDay();
+        $start = LocalCalendar::yearStart(
+            LocalCalendar::year($registeredAt) - max(0, (int) config('habits.backfill_years')),
+        );
 
-        return new self($start->startOfDay(), $end);
+        return new self($start, LocalCalendar::endOfYear(Date::today()->toImmutable()));
     }
 
     /**
@@ -76,7 +80,7 @@ readonly class TrackerPeriod
      */
     public function firstMonth(): CarbonImmutable
     {
-        return $this->start->startOfMonth();
+        return LocalCalendar::startOfMonth($this->start);
     }
 
     /**
@@ -84,7 +88,7 @@ readonly class TrackerPeriod
      */
     public function lastMonth(): CarbonImmutable
     {
-        return $this->end->startOfMonth();
+        return LocalCalendar::startOfMonth($this->end);
     }
 
     /**
@@ -92,7 +96,7 @@ readonly class TrackerPeriod
      */
     public function clampMonth(CarbonImmutable $month): CarbonImmutable
     {
-        $month = $month->startOfMonth();
+        $month = LocalCalendar::startOfMonth($month);
 
         return match (true) {
             $month->lessThan($this->firstMonth()) => $this->firstMonth(),
@@ -108,7 +112,7 @@ readonly class TrackerPeriod
      */
     public function years(): array
     {
-        return range($this->start->year, $this->end->year);
+        return range(LocalCalendar::year($this->start), LocalCalendar::year($this->end));
     }
 
     /**
@@ -116,6 +120,6 @@ readonly class TrackerPeriod
      */
     public function clampYear(int $year): int
     {
-        return max($this->start->year, min($this->end->year, $year));
+        return max(LocalCalendar::year($this->start), min(LocalCalendar::year($this->end), $year));
     }
 }

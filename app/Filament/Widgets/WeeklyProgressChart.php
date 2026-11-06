@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Actions\Habits\GetHabitProgress;
 use App\Data\DailyProgress;
 use App\Models\User;
+use App\Support\LocalCalendar;
 use App\Support\Week;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Contracts\Support\Htmlable;
@@ -60,7 +61,7 @@ class WeeklyProgressChart extends ChartWidget
                     'borderRadius' => 8,
                 ],
             ],
-            'labels' => $days->map(fn (DailyProgress $day): string => $day->date->translatedFormat('D'))->all(),
+            'labels' => $days->map(fn (DailyProgress $day): string => LocalCalendar::format($day->date, __('habits.formats.weekday_short')))->all(),
         ];
     }
 

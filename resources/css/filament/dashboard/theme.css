@@ -3,6 +3,7 @@
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
 @source '../../../../resources/views/components/habits/**/*';
+@source '../../../../vendor/mokhosh/filament-jalali/resources/**/*';
 
 /* Vazirmatn reads better slightly larger in Persian. */
 :root[lang='fa'] body {

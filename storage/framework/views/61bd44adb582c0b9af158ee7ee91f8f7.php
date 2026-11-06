@@ -53,7 +53,16 @@ unset($__defined_vars, $__key, $__value); ?>
         default => 'bg-emerald-500 border-emerald-600 dark:bg-emerald-500/70 dark:border-emerald-400/60',
     };
 
-    $date = $progress->date->translatedFormat(__('habits.formats.long_date'));
+    // The day in the other calendar system (Gregorian when Jalali is active and vice versa).
+    $alternate = \App\Support\LocalCalendar::alternate();
+    $equivalentDay = \App\Support\LocalCalendar::format($progress->date, __('habits.formats.day'), $alternate);
+    $equivalentMonth = \App\Support\LocalCalendar::format($progress->date, __('habits.formats.month'), $alternate);
+    $isEquivalentMonthStart = \App\Support\LocalCalendar::format($progress->date, 'j', $alternate) === \App\Support\LocalCalendar::digits(1);
+
+    $date = __('habits.calendar.with_equivalent', [
+        'date' => \App\Support\LocalCalendar::format($progress->date, __('habits.formats.long_date')),
+        'equivalent' => \App\Support\LocalCalendar::format($progress->date, __('habits.formats.day_month_year'), $alternate),
+    ]);
 
     $label = $progress->isFuture
         ? __('habits.day_summary.future', ['date' => $date])
@@ -118,7 +127,18 @@ unset($__defined_vars, $__key, $__value); ?>
             'text-sm font-semibold leading-none tabular-nums',
             'text-white' => $level === 3 && ! $progress->isFuture,
             'text-gray-900 dark:text-white' => $level !== 3 || $progress->isFuture,
-        ]); ?>"><?php echo e($progress->date->translatedFormat('j')); ?></span>
+        ]); ?>"><?php echo e(\App\Support\LocalCalendar::format($progress->date, __('habits.formats.day'))); ?></span>
+
+        <span
+            aria-hidden="true"
+            data-test="calendar-day-equivalent"
+            class="<?php echo \Illuminate\Support\Arr::toCssClasses([
+                'absolute start-1 top-1 max-w-[calc(100%-0.5rem)] truncate text-[9px] leading-none tabular-nums sm:start-1.5 sm:top-1.5 sm:text-[10px]',
+                'text-white/80' => $level === 3 && ! $progress->isFuture,
+                'text-gray-500 dark:text-gray-400' => $level !== 3 || $progress->isFuture,
+                'font-semibold' => $isEquivalentMonthStart,
+            ]); ?>"
+        ><?php echo e($equivalentDay); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($isEquivalentMonthStart): ?><span class="hidden sm:inline"> <?php echo e($equivalentMonth); ?></span><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?></span>
 
         <span class="<?php echo \Illuminate\Support\Arr::toCssClasses([
             'text-[10px] leading-none tabular-nums',

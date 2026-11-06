@@ -3,7 +3,10 @@
 
     <x-filament::section>
         <x-slot name="heading">
-            <span data-test="calendar-month">{{ $this->monthLabel() }}</span>
+            <span class="flex flex-wrap items-baseline gap-x-2">
+                <span data-test="calendar-month">{{ $this->monthLabel() }}</span>
+                <span class="text-sm font-normal text-gray-500 dark:text-gray-400" data-test="calendar-equivalent-month">{{ $this->equivalentMonthLabel() }}</span>
+            </span>
         </x-slot>
         <x-slot name="description">
             @if ($this->isFutureMonth())

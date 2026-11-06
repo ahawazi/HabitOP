@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Actions\Habits\GetHabitProgress;
 use App\Data\DailyProgress;
 use App\Models\User;
+use App\Support\LocalCalendar;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Date;
@@ -73,7 +74,7 @@ class MoodTrendChart extends ChartWidget
                     'yAxisID' => 'mood',
                 ],
             ],
-            'labels' => $days->map(fn (DailyProgress $day): string => $day->date->translatedFormat('j M'))->all(),
+            'labels' => $days->map(fn (DailyProgress $day): string => LocalCalendar::format($day->date, __('habits.formats.day_month')))->all(),
         ];
     }
 

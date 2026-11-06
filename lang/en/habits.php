@@ -17,6 +17,12 @@ return [
 
     'formats' => [
         'long_date' => 'l, j F Y',
+        'day_month' => 'j M',
+        'day_month_year' => 'j M Y',
+        'month' => 'F',
+        'month_year' => 'F Y',
+        'weekday_short' => 'D',
+        'day' => 'j',
     ],
 
     'names' => [
@@ -44,6 +50,7 @@ return [
         'group_tracker' => 'Tracker',
         'group_manage' => 'Manage',
         'landing' => 'Back to website',
+        'settings' => 'Settings',
     ],
 
     'landing' => [
@@ -147,6 +154,7 @@ return [
         'month_summary_elapsed' => ':completed of :total elapsed days complete',
         'month_future' => 'This month hasn\'t started yet — check back once it arrives.',
         'today_badge' => 'Today',
+        'with_equivalent' => ':date (:equivalent)',
     ],
 
     'year' => [
@@ -214,6 +222,35 @@ return [
 
     'profile' => [
         'locale' => 'Interface language',
+    ],
+
+    'settings' => [
+        'title' => 'Settings',
+        'tab_profile' => 'Profile',
+        'tab_preferences' => 'Language & dates',
+        'calendar' => 'Calendar',
+        'calendar_help' => 'Months, years and every date in the tracker follow this calendar. The calendar page also shows the equivalent date in the other one.',
+        'calendars' => [
+            'jalali' => 'Solar Hijri (Jalali)',
+            'gregorian' => 'Gregorian',
+        ],
+    ],
+
+    'months' => [
+        'jalali' => [
+            1 => 'Farvardin',
+            2 => 'Ordibehesht',
+            3 => 'Khordad',
+            4 => 'Tir',
+            5 => 'Mordad',
+            6 => 'Shahrivar',
+            7 => 'Mehr',
+            8 => 'Aban',
+            9 => 'Azar',
+            10 => 'Dey',
+            11 => 'Bahman',
+            12 => 'Esfand',
+        ],
     ],
 
     'validation' => [

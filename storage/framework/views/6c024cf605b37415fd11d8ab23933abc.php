@@ -21,7 +21,7 @@
         ['name' => __('habits.names.journaling'), 'color' => '#8b5cf6', 'days' => [0, 1, 1, 0, 1, 1, 0], 'target' => 4],
     ];
     $weekDays = array_map(
-        fn (\Carbon\CarbonImmutable $day): string => $day->translatedFormat('D'),
+        fn (\Carbon\CarbonImmutable $day): string => \App\Support\LocalCalendar::format($day, __('habits.formats.weekday_short')),
         \App\Support\Week::days(),
     );
 ?>

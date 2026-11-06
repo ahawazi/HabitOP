@@ -26,13 +26,14 @@ use Illuminate\Support\Str;
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $locale
+ * @property string|null $calendar
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Collection<int, Habit> $habits
  * @property-read Collection<int, DailyCheckIn> $dailyCheckIns
  */
-#[Fillable(['name', 'email', 'password', 'locale'])]
+#[Fillable(['name', 'email', 'password', 'locale', 'calendar'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser, HasLocalePreference
 {

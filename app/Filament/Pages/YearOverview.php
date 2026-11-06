@@ -9,6 +9,7 @@ use App\Data\StreakSummary;
 use App\Data\TrackerPeriod;
 use App\Filament\Navigation\NavigationGroup;
 use App\Models\User;
+use App\Support\LocalCalendar;
 use App\Support\Week;
 use BackedEnum;
 use Carbon\CarbonImmutable;
@@ -36,6 +37,9 @@ class YearOverview extends Page
 
     protected string $view = 'filament.pages.year-overview';
 
+    /**
+     * The displayed year in the active calendar (e.g. 1405 in Persian).
+     */
     #[Url]
     public ?int $year = null;
 
@@ -58,12 +62,12 @@ class YearOverview extends Page
 
     public function getSubheading(): string|Htmlable|null
     {
-        return __('habits.year.subtitle', ['year' => $this->selectedYear()]);
+        return __('habits.year.subtitle', ['year' => LocalCalendar::digits($this->selectedYear())]);
     }
 
     public function mount(): void
     {
-        $this->year = $this->period()->clampYear($this->year ?? Date::today()->year);
+        $this->year = $this->period()->clampYear($this->year ?? LocalCalendar::year(Date::today()->toImmutable()));
     }
 
     public function updatedYear(): void
@@ -74,7 +78,7 @@ class YearOverview extends Page
 
     public function selectedYear(): int
     {
-        return $this->period()->clampYear($this->year ?? Date::today()->year);
+        return $this->period()->clampYear($this->year ?? LocalCalendar::year(Date::today()->toImmutable()));
     }
 
     /**
@@ -87,16 +91,16 @@ class YearOverview extends Page
         $progress = $this->yearProgress();
         $months = [];
 
-        foreach (range(1, 12) as $number) {
-            $month = CarbonImmutable::create($this->selectedYear(), $number, 1);
+        foreach (LocalCalendar::monthsOfYear($this->selectedYear()) as $month) {
+            $end = LocalCalendar::endOfMonth($month);
             $cells = array_fill(0, (int) Week::start($month)->diffInDays($month), null);
 
-            for ($day = $month; $day->isSameMonth($month); $day = $day->addDay()) {
+            for ($day = $month; $day->lessThanOrEqualTo($end); $day = $day->addDay()) {
                 $cells[] = $progress->get($day->toDateString());
             }
 
             $months[] = [
-                'label' => $month->translatedFormat('F'),
+                'label' => LocalCalendar::format($month, __('habits.formats.month')),
                 'weeks' => array_chunk($cells, 7),
             ];
         }
@@ -110,7 +114,7 @@ class YearOverview extends Page
     public function weekdayLabels(): array
     {
         return array_map(
-            fn (CarbonImmutable $day): string => mb_substr($day->translatedFormat('D'), 0, 1),
+            fn (CarbonImmutable $day): string => mb_substr(LocalCalendar::format($day, __('habits.formats.weekday_short')), 0, 1),
             Week::days(),
         );
     }
@@ -142,22 +146,22 @@ class YearOverview extends Page
     {
         return [
             Action::make('previousYear')
-                ->label(fn (): string => (string) ($this->selectedYear() - 1))
+                ->label(fn (): string => LocalCalendar::digits($this->selectedYear() - 1))
                 ->icon(Heroicon::OutlinedChevronLeft)
                 ->extraAttributes(['class' => 'rtl:[&_svg]:rotate-180'])
                 ->color('gray')
-                ->disabled(fn (): bool => $this->selectedYear() <= $this->period()->start->year)
+                ->disabled(fn (): bool => $this->selectedYear() <= LocalCalendar::year($this->period()->start))
                 ->action(function (): void {
                     $this->year = $this->selectedYear() - 1;
                     $this->updatedYear();
                 }),
             Action::make('nextYear')
-                ->label(fn (): string => (string) ($this->selectedYear() + 1))
+                ->label(fn (): string => LocalCalendar::digits($this->selectedYear() + 1))
                 ->icon(Heroicon::OutlinedChevronRight)
                 ->iconPosition('after')
                 ->extraAttributes(['class' => 'rtl:[&_svg]:rotate-180'])
                 ->color('gray')
-                ->disabled(fn (): bool => $this->selectedYear() >= $this->period()->end->year)
+                ->disabled(fn (): bool => $this->selectedYear() >= LocalCalendar::year($this->period()->end))
                 ->action(function (): void {
                     $this->year = $this->selectedYear() + 1;
                     $this->updatedYear();
@@ -172,9 +176,9 @@ class YearOverview extends Page
     {
         /** @var User $user */
         $user = auth()->user();
-        $start = CarbonImmutable::create($this->selectedYear(), 1, 1);
+        $start = LocalCalendar::yearStart($this->selectedYear());
 
-        return $this->yearProgress ??= app(GetHabitProgress::class)->forRange($user, $start, $start->endOfYear()->startOfDay());
+        return $this->yearProgress ??= app(GetHabitProgress::class)->forRange($user, $start, LocalCalendar::endOfYear($start));
     }
 
     protected function period(): TrackerPeriod

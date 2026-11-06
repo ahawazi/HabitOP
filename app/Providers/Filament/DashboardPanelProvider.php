@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Auth\EditProfile;
 use App\Filament\Auth\Register;
 use App\Filament\AvatarProviders\InitialsAvatarProvider;
+use App\Filament\Navigation\NavigationGroup;
 use App\Filament\Pages\Dashboard;
 use App\Http\Middleware\SetLocale;
 use Filament\Actions\Action;
@@ -13,9 +14,11 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Icons\Heroicon;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Contracts\View\View;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -61,6 +64,7 @@ class DashboardPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
+            ->navigationItems($this->navigationItems())
             ->userMenuItems($this->userMenuItems())
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn (): View => view('filament.locale-switcher'))
             ->renderHook(PanelsRenderHook::SIMPLE_LAYOUT_START, fn (): View => view('filament.locale-switcher', ['floating' => true]))
@@ -79,6 +83,24 @@ class DashboardPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ]);
+    }
+
+    /**
+     * Extra sidebar entries: the settings page (Filament's profile page).
+     *
+     * @return array<int, NavigationItem>
+     */
+    protected function navigationItems(): array
+    {
+        return [
+            NavigationItem::make('settings')
+                ->label(fn (): string => __('habits.nav.settings'))
+                ->icon(Heroicon::OutlinedCog6Tooth)
+                ->group(NavigationGroup::Manage)
+                ->sort(10)
+                ->url(fn (): string => EditProfile::getUrl())
+                ->isActiveWhen(fn (): bool => request()->routeIs(EditProfile::getRouteName())),
+        ];
     }
 
     /**

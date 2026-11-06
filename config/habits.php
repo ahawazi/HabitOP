@@ -37,6 +37,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Calendar System (per locale)
+    |--------------------------------------------------------------------------
+    |
+    | "jalali" or "gregorian". Decides where months and years start in the
+    | calendar, the year overview and the tracked period, and how dates read.
+    |
+    */
+
+    'calendars' => [
+        'fa' => 'jalali',
+        'en' => 'gregorian',
+        'default' => 'gregorian',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Backfill Window
     |--------------------------------------------------------------------------
     |

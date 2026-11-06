@@ -7,6 +7,7 @@ use App\Filament\Pages\CheckIn;
 use App\Filament\Resources\DailyCheckIns\Pages\ManageDailyCheckIns;
 use App\Models\DailyCheckIn;
 use App\Models\User;
+use App\Support\LocalCalendar;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -82,7 +83,7 @@ class DailyCheckInResource extends Resource
             ->columns([
                 TextColumn::make('date')
                     ->label(__('habits.history.date'))
-                    ->formatStateUsing(fn (DailyCheckIn $record): string => $record->date->translatedFormat(__('habits.formats.long_date')))
+                    ->formatStateUsing(fn (DailyCheckIn $record): string => LocalCalendar::format($record->date, __('habits.formats.long_date')))
                     ->sortable(),
                 TextColumn::make('completed_count')
                     ->label(__('habits.history.completed'))
@@ -111,8 +112,8 @@ class DailyCheckInResource extends Resource
             ->filters([
                 Filter::make('date')
                     ->schema([
-                        DatePicker::make('from')->label(__('habits.history.from')),
-                        DatePicker::make('until')->label(__('habits.history.until')),
+                        static::datePicker('from')->label(__('habits.history.from')),
+                        static::datePicker('until')->label(__('habits.history.until')),
                     ])
                     ->query(fn (Builder $query, array $data): Builder => $query
                         ->when($data['from'] ?? null, fn (Builder $query, string $date) => $query->whereDate('date', '>=', $date))
@@ -141,6 +142,17 @@ class DailyCheckInResource extends Resource
         return [
             'index' => ManageDailyCheckIns::route('/'),
         ];
+    }
+
+    /**
+     * A date picker in the active calendar (the Jalali picker in Persian).
+     */
+    protected static function datePicker(string $name): DatePicker
+    {
+        return DatePicker::make($name)
+            ->when(LocalCalendar::isJalali(), fn (DatePicker $picker): DatePicker => $picker
+                ->jalali()
+                ->displayFormat(__('habits.formats.day_month_year')));
     }
 
     /**

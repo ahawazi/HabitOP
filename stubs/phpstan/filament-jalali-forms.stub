@@ -1,0 +1,12 @@
+<?php
+
+/*
+ * Date picker macro registered at runtime by mokhosh/filament-jalali, declared for PHPStan.
+ */
+
+namespace Filament\Forms\Components;
+
+/**
+ * @method static jalali(bool $weekdaysShort = true)
+ */
+class DateTimePicker {}

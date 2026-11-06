@@ -15,6 +15,12 @@ return [
 
     'formats' => [
         'long_date' => 'l j F Y',
+        'day_month' => 'j F',
+        'day_month_year' => 'j F Y',
+        'month' => 'F',
+        'month_year' => 'F Y',
+        'weekday_short' => 'D',
+        'day' => 'j',
     ],
 
     'names' => [
@@ -42,6 +48,7 @@ return [
         'group_tracker' => 'ردیابی',
         'group_manage' => 'مدیریت',
         'landing' => 'بازگشت به سایت',
+        'settings' => 'تنظیمات',
     ],
 
     'landing' => [
@@ -145,6 +152,7 @@ return [
         'month_summary_elapsed' => ':completed روز کامل از :total روز گذشته',
         'month_future' => 'این ماه هنوز شروع نشده است.',
         'today_badge' => 'امروز',
+        'with_equivalent' => ':date (:equivalent)',
     ],
 
     'year' => [
@@ -212,6 +220,35 @@ return [
 
     'profile' => [
         'locale' => 'زبان رابط کاربری',
+    ],
+
+    'settings' => [
+        'title' => 'تنظیمات',
+        'tab_profile' => 'پروفایل',
+        'tab_preferences' => 'زبان و تاریخ',
+        'calendar' => 'تقویم',
+        'calendar_help' => 'ماه‌ها، سال‌ها و همه تاریخ‌های ردیاب با این تقویم نمایش داده می‌شوند. صفحه تقویم معادل تاریخ را در تقویم دیگر هم نشان می‌دهد.',
+        'calendars' => [
+            'jalali' => 'هجری شمسی (جلالی)',
+            'gregorian' => 'میلادی',
+        ],
+    ],
+
+    'months' => [
+        'jalali' => [
+            1 => 'فروردین',
+            2 => 'اردیبهشت',
+            3 => 'خرداد',
+            4 => 'تیر',
+            5 => 'مرداد',
+            6 => 'شهریور',
+            7 => 'مهر',
+            8 => 'آبان',
+            9 => 'آذر',
+            10 => 'دی',
+            11 => 'بهمن',
+            12 => 'اسفند',
+        ],
     ],
 
     'validation' => [

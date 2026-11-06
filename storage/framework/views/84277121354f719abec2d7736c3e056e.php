@@ -25,7 +25,10 @@
 <?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::processComponentKey($component); ?>
 
          <?php $__env->slot('heading', null, []); ?> 
-            <span data-test="calendar-month"><?php echo e($this->monthLabel()); ?></span>
+            <span class="flex flex-wrap items-baseline gap-x-2">
+                <span data-test="calendar-month"><?php echo e($this->monthLabel()); ?></span>
+                <span class="text-sm font-normal text-gray-500 dark:text-gray-400" data-test="calendar-equivalent-month"><?php echo e($this->equivalentMonthLabel()); ?></span>
+            </span>
          <?php $__env->endSlot(); ?>
          <?php $__env->slot('description', null, []); ?> 
             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($this->isFutureMonth()): ?>

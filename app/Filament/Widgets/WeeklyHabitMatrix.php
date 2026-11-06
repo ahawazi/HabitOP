@@ -9,6 +9,7 @@ use App\Data\WeeklyHabitStat;
 use App\Filament\Pages\CheckIn;
 use App\Filament\Resources\Habits\HabitResource;
 use App\Models\User;
+use App\Support\LocalCalendar;
 use App\Support\Week;
 use Carbon\CarbonImmutable;
 use Filament\Notifications\Notification;
@@ -121,8 +122,8 @@ class WeeklyHabitMatrix extends Widget
 
         return array_map(fn (CarbonImmutable $day): array => [
             'date' => $day->toDateString(),
-            'label' => $day->translatedFormat('D'),
-            'number' => $day->translatedFormat('j M'),
+            'label' => LocalCalendar::format($day, __('habits.formats.weekday_short')),
+            'number' => LocalCalendar::format($day, __('habits.formats.day_month')),
             'isToday' => $day->isSameDay($today),
             'isRecordable' => $period->isRecordable($day),
         ], Week::days($this->weekStart()));
@@ -137,7 +138,8 @@ class WeeklyHabitMatrix extends Widget
     {
         $start = $this->weekStart();
 
-        return $start->translatedFormat('j M').' – '.$start->addDays(6)->translatedFormat('j M Y');
+        return LocalCalendar::format($start, __('habits.formats.day_month'))
+            .' – '.LocalCalendar::format($start->addDays(6), __('habits.formats.day_month_year'));
     }
 
     public function checkInUrl(string $date): string

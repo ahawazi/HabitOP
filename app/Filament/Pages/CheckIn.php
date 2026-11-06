@@ -11,6 +11,7 @@ use App\Filament\Resources\Habits\HabitResource;
 use App\Models\DailyCheckIn;
 use App\Models\Habit;
 use App\Models\User;
+use App\Support\LocalCalendar;
 use BackedEnum;
 use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
@@ -76,7 +77,10 @@ class CheckIn extends Page
 
     public function getSubheading(): string|Htmlable|null
     {
-        return $this->selectedDate()->translatedFormat(__('habits.formats.long_date'));
+        return __('habits.calendar.with_equivalent', [
+            'date' => LocalCalendar::format($this->selectedDate(), __('habits.formats.long_date')),
+            'equivalent' => LocalCalendar::format($this->selectedDate(), __('habits.formats.day_month_year'), LocalCalendar::alternate()),
+        ]);
     }
 
     public function mount(): void
@@ -224,7 +228,7 @@ class CheckIn extends Page
 
     public function calendarUrl(): string
     {
-        return Calendar::getUrl(['month' => $this->selectedDate()->format('Y-m')]);
+        return Calendar::getUrl(['month' => LocalCalendar::monthKey($this->selectedDate())]);
     }
 
     /**

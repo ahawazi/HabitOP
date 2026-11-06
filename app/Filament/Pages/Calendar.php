@@ -8,6 +8,7 @@ use App\Data\ProgressSummary;
 use App\Data\TrackerPeriod;
 use App\Filament\Navigation\NavigationGroup;
 use App\Models\User;
+use App\Support\LocalCalendar;
 use App\Support\Week;
 use BackedEnum;
 use Carbon\CarbonImmutable;
@@ -18,7 +19,6 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Date;
 use Livewire\Attributes\Url;
-use Throwable;
 use UnitEnum;
 
 /**
@@ -37,7 +37,7 @@ class Calendar extends Page
     protected string $view = 'filament.pages.calendar';
 
     /**
-     * The displayed month, as "Y-m".
+     * The displayed month, as "Y-m" in the active calendar (e.g. "1405-08" in Persian).
      */
     #[Url]
     public string $month = '';
@@ -64,12 +64,12 @@ class Calendar extends Page
 
     public function previousMonth(): void
     {
-        $this->month = $this->normalizeMonth($this->selectedMonth()->subMonth()->format('Y-m'));
+        $this->month = $this->normalizeMonth(LocalCalendar::monthKey(LocalCalendar::addMonths($this->selectedMonth(), -1)));
     }
 
     public function nextMonth(): void
     {
-        $this->month = $this->normalizeMonth($this->selectedMonth()->addMonth()->format('Y-m'));
+        $this->month = $this->normalizeMonth(LocalCalendar::monthKey(LocalCalendar::addMonths($this->selectedMonth(), 1)));
     }
 
     public function currentMonth(): void
@@ -79,7 +79,17 @@ class Calendar extends Page
 
     public function monthLabel(): string
     {
-        return $this->selectedMonth()->translatedFormat('F Y');
+        return LocalCalendar::format($this->selectedMonth(), __('habits.formats.month_year'));
+    }
+
+    /**
+     * The months the displayed month spans in the other calendar, e.g. "Oct – Nov 2026".
+     */
+    public function equivalentMonthLabel(): string
+    {
+        $month = $this->selectedMonth();
+
+        return LocalCalendar::monthSpan($month, LocalCalendar::endOfMonth($month), LocalCalendar::alternate());
     }
 
     /**
@@ -91,14 +101,14 @@ class Calendar extends Page
     {
         $month = $this->selectedMonth();
         $gridStart = Week::start($month);
-        $gridEnd = Week::end($month->endOfMonth()->startOfDay());
+        $gridEnd = Week::end(LocalCalendar::endOfMonth($month));
         $progress = $this->progressFor($gridStart, $gridEnd);
 
         return $progress
             ->values()
             ->map(fn (DailyProgress $day): array => [
                 'progress' => $day,
-                'outside' => ! $day->date->isSameMonth($month),
+                'outside' => ! LocalCalendar::isSameMonth($day->date, $month),
             ])
             ->chunk(7)
             ->map(fn (Collection $week): array => $week->values()->all())
@@ -111,7 +121,7 @@ class Calendar extends Page
     public function weekdayLabels(): array
     {
         return array_map(
-            fn (CarbonImmutable $day): string => $day->translatedFormat('D'),
+            fn (CarbonImmutable $day): string => LocalCalendar::format($day, __('habits.formats.weekday_short')),
             Week::days(),
         );
     }
@@ -121,13 +131,13 @@ class Calendar extends Page
         $month = $this->selectedMonth();
 
         return app(GetHabitProgress::class)->summarize(
-            $this->progressFor($month, $month->endOfMonth()->startOfDay()),
+            $this->progressFor($month, LocalCalendar::endOfMonth($month)),
         );
     }
 
     public function isFutureMonth(): bool
     {
-        return $this->selectedMonth()->greaterThan(Date::today()->toImmutable()->startOfMonth());
+        return $this->selectedMonth()->greaterThan(LocalCalendar::startOfMonth(Date::today()->toImmutable()));
     }
 
     public function dayUrl(DailyProgress $day): ?string
@@ -153,7 +163,7 @@ class Calendar extends Page
             Action::make('currentMonth')
                 ->label(__('habits.calendar.this_month'))
                 ->color('gray')
-                ->hidden(fn (): bool => $this->selectedMonth()->isSameMonth(Date::today()->toImmutable()))
+                ->hidden(fn (): bool => LocalCalendar::isSameMonth($this->selectedMonth(), Date::today()->toImmutable()))
                 ->action(fn () => $this->currentMonth()),
             Action::make('nextMonth')
                 ->label(__('habits.calendar.next_month'))
@@ -179,7 +189,8 @@ class Calendar extends Page
 
     protected function selectedMonth(): CarbonImmutable
     {
-        return CarbonImmutable::createFromFormat('!Y-m', $this->month ?: Date::today()->format('Y-m'))->startOfMonth();
+        return LocalCalendar::parseMonthKey($this->month)
+            ?? LocalCalendar::startOfMonth(Date::today()->toImmutable());
     }
 
     protected function period(): TrackerPeriod
@@ -190,16 +201,13 @@ class Calendar extends Page
         return TrackerPeriod::forUser($user);
     }
 
+    /**
+     * Parse and clamp a requested month key; anything unparsable means "this month".
+     */
     protected function normalizeMonth(?string $month): string
     {
-        try {
-            $parsed = filled($month) && preg_match('/^\d{4}-\d{2}$/', (string) $month)
-                ? CarbonImmutable::createFromFormat('!Y-m', (string) $month)
-                : Date::today()->toImmutable();
-        } catch (Throwable) {
-            $parsed = Date::today()->toImmutable();
-        }
+        $parsed = LocalCalendar::parseMonthKey($month) ?? Date::today()->toImmutable();
 
-        return $this->period()->clampMonth($parsed)->format('Y-m');
+        return LocalCalendar::monthKey($this->period()->clampMonth($parsed));
     }
 }
