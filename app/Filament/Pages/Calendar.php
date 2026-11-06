@@ -1,0 +1,205 @@
+<?php
+
+namespace App\Filament\Pages;
+
+use App\Actions\Habits\GetHabitProgress;
+use App\Data\DailyProgress;
+use App\Data\ProgressSummary;
+use App\Data\TrackerPeriod;
+use App\Filament\Navigation\NavigationGroup;
+use App\Models\User;
+use App\Support\Week;
+use BackedEnum;
+use Carbon\CarbonImmutable;
+use Filament\Actions\Action;
+use Filament\Pages\Page;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Date;
+use Livewire\Attributes\Url;
+use Throwable;
+use UnitEnum;
+
+/**
+ * A month at a glance; every day links to its check-in.
+ */
+class Calendar extends Page
+{
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Tracker;
+
+    protected static ?int $navigationSort = 2;
+
+    protected static ?string $slug = 'calendar';
+
+    protected string $view = 'filament.pages.calendar';
+
+    /**
+     * The displayed month, as "Y-m".
+     */
+    #[Url]
+    public string $month = '';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('habits.nav.calendar');
+    }
+
+    public function getTitle(): string|Htmlable
+    {
+        return __('habits.calendar.title');
+    }
+
+    public function getSubheading(): string|Htmlable|null
+    {
+        return __('habits.calendar.subtitle');
+    }
+
+    public function mount(): void
+    {
+        $this->month = $this->normalizeMonth($this->month);
+    }
+
+    public function previousMonth(): void
+    {
+        $this->month = $this->normalizeMonth($this->selectedMonth()->subMonth()->format('Y-m'));
+    }
+
+    public function nextMonth(): void
+    {
+        $this->month = $this->normalizeMonth($this->selectedMonth()->addMonth()->format('Y-m'));
+    }
+
+    public function currentMonth(): void
+    {
+        $this->month = $this->normalizeMonth(null);
+    }
+
+    public function monthLabel(): string
+    {
+        return $this->selectedMonth()->translatedFormat('F Y');
+    }
+
+    /**
+     * The grid's weeks, each a list of seven days (padding days included).
+     *
+     * @return array<int, array<int, array{progress: DailyProgress, outside: bool}>>
+     */
+    public function weeks(): array
+    {
+        $month = $this->selectedMonth();
+        $gridStart = Week::start($month);
+        $gridEnd = Week::end($month->endOfMonth()->startOfDay());
+        $progress = $this->progressFor($gridStart, $gridEnd);
+
+        return $progress
+            ->values()
+            ->map(fn (DailyProgress $day): array => [
+                'progress' => $day,
+                'outside' => ! $day->date->isSameMonth($month),
+            ])
+            ->chunk(7)
+            ->map(fn (Collection $week): array => $week->values()->all())
+            ->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function weekdayLabels(): array
+    {
+        return array_map(
+            fn (CarbonImmutable $day): string => $day->translatedFormat('D'),
+            Week::days(),
+        );
+    }
+
+    public function summary(): ProgressSummary
+    {
+        $month = $this->selectedMonth();
+
+        return app(GetHabitProgress::class)->summarize(
+            $this->progressFor($month, $month->endOfMonth()->startOfDay()),
+        );
+    }
+
+    public function isFutureMonth(): bool
+    {
+        return $this->selectedMonth()->greaterThan(Date::today()->toImmutable()->startOfMonth());
+    }
+
+    public function dayUrl(DailyProgress $day): ?string
+    {
+        return $this->period()->contains($day->date)
+            ? CheckIn::getUrl(['date' => $day->date->toDateString()])
+            : null;
+    }
+
+    /**
+     * @return array<Action>
+     */
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('previousMonth')
+                ->label(__('habits.calendar.previous_month'))
+                ->icon(Heroicon::OutlinedChevronLeft)
+                ->extraAttributes(['class' => 'rtl:[&_svg]:rotate-180'])
+                ->color('gray')
+                ->disabled(fn (): bool => $this->selectedMonth()->lessThanOrEqualTo($this->period()->firstMonth()))
+                ->action(fn () => $this->previousMonth()),
+            Action::make('currentMonth')
+                ->label(__('habits.calendar.this_month'))
+                ->color('gray')
+                ->hidden(fn (): bool => $this->selectedMonth()->isSameMonth(Date::today()->toImmutable()))
+                ->action(fn () => $this->currentMonth()),
+            Action::make('nextMonth')
+                ->label(__('habits.calendar.next_month'))
+                ->icon(Heroicon::OutlinedChevronRight)
+                ->iconPosition('after')
+                ->extraAttributes(['class' => 'rtl:[&_svg]:rotate-180'])
+                ->color('gray')
+                ->disabled(fn (): bool => $this->selectedMonth()->greaterThanOrEqualTo($this->period()->lastMonth()))
+                ->action(fn () => $this->nextMonth()),
+        ];
+    }
+
+    /**
+     * @return Collection<string, DailyProgress>
+     */
+    protected function progressFor(CarbonImmutable $start, CarbonImmutable $end): Collection
+    {
+        /** @var User $user */
+        $user = auth()->user();
+
+        return app(GetHabitProgress::class)->forRange($user, $start, $end);
+    }
+
+    protected function selectedMonth(): CarbonImmutable
+    {
+        return CarbonImmutable::createFromFormat('!Y-m', $this->month ?: Date::today()->format('Y-m'))->startOfMonth();
+    }
+
+    protected function period(): TrackerPeriod
+    {
+        /** @var User $user */
+        $user = auth()->user();
+
+        return TrackerPeriod::forUser($user);
+    }
+
+    protected function normalizeMonth(?string $month): string
+    {
+        try {
+            $parsed = filled($month) && preg_match('/^\d{4}-\d{2}$/', (string) $month)
+                ? CarbonImmutable::createFromFormat('!Y-m', (string) $month)
+                : Date::today()->toImmutable();
+        } catch (Throwable) {
+            $parsed = Date::today()->toImmutable();
+        }
+
+        return $this->period()->clampMonth($parsed)->format('Y-m');
+    }
+}
